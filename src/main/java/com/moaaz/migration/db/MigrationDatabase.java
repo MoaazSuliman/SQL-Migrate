@@ -2,7 +2,12 @@ package com.moaaz.migration.db;
 
 import com.moaaz.migration.model.Migration;
 
-import java.sql.*;
+import java.sql.Connection;
+import java.sql.PreparedStatement;
+import java.sql.ResultSet;
+import java.sql.SQLException;
+import java.sql.Statement;
+import java.sql.Timestamp;
 import java.time.Instant;
 import java.util.ArrayList;
 import java.util.List;
@@ -100,34 +105,6 @@ public class MigrationDatabase {
         }
     }
 
-    // Additional useful methods
-    public boolean isMigrationApplied(String checksum) {
-        String sql = "SELECT COUNT(*) FROM schema_migrations WHERE checksum = ? AND executed = TRUE";
-
-        try (PreparedStatement ps = connection.prepareStatement(sql)) {
-            ps.setString(1, checksum);
-            try (ResultSet rs = ps.executeQuery()) {
-                if (rs.next()) {
-                    return rs.getInt(1) > 0;
-                }
-            }
-        } catch (SQLException e) {
-            throw new RuntimeException("Failed to check migration status: " + e.getMessage(), e);
-        }
-        return false;
-    }
-
-    public void markMigrationAsFailed(Migration migration) {
-        String sql = "UPDATE schema_migrations SET success = FALSE WHERE file_path = ?";
-
-        try (PreparedStatement ps = connection.prepareStatement(sql)) {
-            ps.setString(1, migration.getFilePath());
-            ps.executeUpdate();
-        } catch (SQLException e) {
-            throw new RuntimeException("Failed to mark migration as failed: " + e.getMessage(), e);
-        }
-    }
-
     public void beginTransaction() throws SQLException {
         connection.setAutoCommit(false);
     }
@@ -152,25 +129,6 @@ public class MigrationDatabase {
         }
     }
 
-    public Migration findMigrationByVersion(String version) throws SQLException {
-        String sql = "SELECT * FROM schema_migrations WHERE file_name LIKE ?";
-        try (PreparedStatement ps = connection.prepareStatement(sql)) {
-            ps.setString(1, "V" + version + "%");
-            try (ResultSet rs = ps.executeQuery()) {
-                if (rs.next()) {
-                    Migration migration = new Migration();
-                    migration.setFileName(rs.getString("file_name"));
-                    migration.setFilePath(rs.getString("file_path"));
-                    migration.setScript(rs.getString("script"));
-                    migration.setCheckSum(rs.getString("checksum"));
-                    migration.setExecuted(rs.getBoolean("executed"));
-                    migration.setSuccess(rs.getBoolean("success"));
-                    return migration;
-                }
-            }
-        }
-        return null;
-    }
 
     public Migration findMigrationByPath(String filePath) throws SQLException {
         String sql = "SELECT * FROM schema_migrations WHERE file_path = ?";

@@ -28,14 +28,14 @@ public class CheckSumCalculator {
     }
 
     private static InputStream getInputStream(String path) throws IOException {
-        // First try as classpath resource
+
         InputStream is = Thread.currentThread()
                 .getContextClassLoader()
                 .getResourceAsStream(path.replace("\\", "/"));
 
         if (is != null) return is;
 
-        // Fallback to filesystem
+
         return Files.newInputStream(Paths.get(path));
     }
 }
